@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
 import { resolve } from "node:path";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
-// node tests/btw.mjs /path/to/@earendil-works/pi-coding-agent
+// node extensions/btw/test.mjs /path/to/@earendil-works/pi-coding-agent
 const pkg = resolve(process.argv[2]);
 const { loadExtensions } = await import(pathToFileURL(`${pkg}/dist/core/extensions/loader.js`));
-const loaded = await loadExtensions([resolve("extensions/btw.ts")], process.cwd());
+const loaded = await loadExtensions([fileURLToPath(new URL("./index.ts", import.meta.url))], process.cwd());
 assert.deepEqual(loaded.errors, []);
 const ext = loaded.extensions[0];
 const command = ext.commands.get("btw");

@@ -4,17 +4,21 @@
   "private": true,
   "description": "Reusable Pi extensions for side questions and coding workflows",
   "type": "module",
-  "license": "UNLICENSED",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tboon0/pi-extensions.git"
+  },
   "keywords": ["pi-package"],
   "files": ["extensions", "README.md"],
   "scripts": {
-    "test": "node tests/btw.mjs"
+    "test": "node extensions/btw/test.mjs"
   },
   "peerDependencies": {
     "@earendil-works/pi-coding-agent": "*",
     "@earendil-works/pi-tui": "*"
   },
   "pi": {
-    "extensions": ["./extensions/btw.ts"]
+    "extensions": ["extensions/*/index.ts"]
   }
 }

@@ -1,7 +1,15 @@
 # pi-extensions
 
 Reusable extensions for [Pi](https://pi.dev). Requires Pi 1.5.2 APIs; currently
-verified with Pi 1.5.2. This package is local and unpublished.
+regression-tested with Pi 1.6.0.
+
+## Install from GitHub
+
+This repository is public; anyone can install it.
+
+```sh
+pi install git:github.com/tboon0/pi-extensions@v0.1.0
+```
 
 ## Install locally
 
@@ -10,65 +18,33 @@ pi install /absolute/path/to/pi-extensions
 ```
 
 Run `/reload` in existing sessions. Pi loads the source directly, so no build or
-runtime dependency installation is needed. Remove any standalone installation of
-`btw.ts` first to avoid duplicate commands.
+runtime dependency installation is needed.
 
-## `/btw` — side questions
+## Extensions
 
-```text
-/btw Why did we choose this approach?
-/btw --cancel
-```
+| Extension | Description |
+|---|---|
+| [`/btw`](extensions/btw/README.md) | Ask a tool-free side question about the conversation without changing the main task or its context. |
 
-- Uses the currently selected model through Pi's configured provider and auth.
-- Runs independently without aborting or steering the main task.
-- Has no tools and cannot inspect files or make changes.
-- Uses a bounded text snapshot of the active conversation, including compaction
-  summaries and tool results. Older text may be omitted; images are not included.
-- Saves answers as display-only entries in the session file once they leave the
-  pinned box (Esc, a new `/btw`, tree navigation, or session shutdown), so an
-  answer never shows twice. A hard crash loses an answer that is still pinned.
-  Saved answers appear in the transcript in a muted bordered box labelled
-  "not in model context", collapsed to 6 lines until expanded (Ctrl+O by
-  default), and are excluded from future model context. They are not ephemeral
-  or private from anyone with access to that session file.
-- Each question is independent; earlier side answers are not included.
-- Shows a spinner above the editor while the answer is pending, then pins the
-  answer there in a bordered box (up to 15 lines) so main-agent output can't
-  scroll it away. Press Esc with an empty editor while the agent is idle to
-  dismiss it; while the agent runs, Esc still interrupts it as usual. A new
-  `/btw` replaces the pinned answer.
-- Run `/btw` with no question to read the full pinned answer in a scrollable
-  overlay (↑/↓, PgUp/PgDn, Home/End; Esc closes it and keeps the answer pinned).
-  It works while the agent runs.
-- Runs one side question at a time, with a two-minute timeout. A second `/btw`
-  is rejected until the first finishes; `/btw --cancel` stops the running one so
-  you can ask again. It never touches the main task. Session shutdown or tree
-  navigation also cancels it.
-- Supports TUI and RPC mode, not print mode. Extra provider calls are billed but
-  are not included in Pi's session cost totals.
+Each extension lives in `extensions/<name>/` with its entry point (`index.ts`),
+README, and tests. Pi loads every `extensions/*/index.ts`.
 
 ## Development
 
-Run regression checks against an installed Pi package:
+Run the regression checks against an installed Pi package:
 
 ```sh
 npm test -- /absolute/path/to/node_modules/@earendil-works/pi-coding-agent
 ```
 
-The tests use Pi's native extension loader and mock model responses. They cover
-context isolation, non-blocking requests, the loading widget, the pinned answer, the reader overlay, cancellation, shutdown, and errors.
-Live provider responses and visual TUI rendering still need manual verification.
+## Releases
 
-## Publishing checklist
+Distributed through versioned Git tags on GitHub, not npm.
+`private: true` in `package.json` prevents accidental npm publication.
+Before each release, run the regression checks and manually verify a live provider
+response and the TUI presentation. Personal settings and credentials belong outside
+this repository.
 
-Before distributing this package:
+## License
 
-1. Choose a license and add `LICENSE` (currently `UNLICENSED`).
-2. Create a remote repository and add its URL to the package metadata.
-3. Verify a live provider response and the TUI presentation.
-4. Publish a Git tag for reproducible Pi installations.
-5. For npm, choose an available package name or scope and remove `private: true`.
-
-Pi supports Git packages, so npm publication is optional. Personal settings and
-credentials belong outside this repository.
+MIT — see [LICENSE](LICENSE).
