@@ -1,0 +1,29 @@
+{
+  "name": "@tboon0/pi-btw",
+  "version": "0.1.0",
+  "description": "Ask a tool-free side question in Pi without interrupting the main task or adding to its context",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tboon0/pi-extensions.git",
+    "directory": "extensions/btw"
+  },
+  "homepage": "https://github.com/tboon0/pi-extensions/tree/main/extensions/btw#readme",
+  "keywords": ["pi-package"],
+  "files": ["index.ts", "README.md", "LICENSE"],
+  "scripts": {
+    "test": "node test.mjs"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*",
+    "@earendil-works/pi-tui": "*"
+  },
+  "pi": {
+    "extensions": ["./index.ts"],
+    "image": "https://raw.githubusercontent.com/tboon0/pi-extensions/btw-v0.1.0/extensions/btw/images/transcript.png"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

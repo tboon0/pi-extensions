@@ -8,13 +8,23 @@ main task or adding to its context.
 /btw --cancel
 ```
 
+## Install
+
+```sh
+pi install npm:@tboon0/pi-btw
+```
+
+Requires Pi 1.5.2 or later; tested with Pi 1.6.0. Run `/reload` in existing
+sessions. Remove any standalone installation of `btw.ts`, or the all-extensions
+`pi-extensions` package, first to avoid duplicate commands.
+
 The answer is pinned above the editor until you dismiss it:
 
-![A BTW answer pinned above the editor](images/pinned.png)
+![A BTW answer pinned above the editor](https://raw.githubusercontent.com/tboon0/pi-extensions/main/extensions/btw/images/pinned.png)
 
 Once dismissed, it stays in the transcript, marked as outside model context:
 
-![A saved BTW answer in the transcript between main messages](images/transcript.png)
+![A saved BTW answer in the transcript between main messages](https://raw.githubusercontent.com/tboon0/pi-extensions/main/extensions/btw/images/transcript.png)
 
 ## Behavior
 
@@ -46,13 +56,12 @@ Once dismissed, it stays in the transcript, marked as outside model context:
 - Supports TUI and RPC mode, not print mode. Extra provider calls are billed but
   are not included in Pi's session cost totals.
 
-Remove any standalone installation of `btw.ts` before installing this package
-to avoid duplicate commands.
-
 ## Tests
 
+From this directory:
+
 ```sh
-node extensions/btw/test.mjs /absolute/path/to/node_modules/@earendil-works/pi-coding-agent
+npm test -- /absolute/path/to/node_modules/@earendil-works/pi-coding-agent
 ```
 
 The tests use Pi's native extension loader and mock model responses. They cover
