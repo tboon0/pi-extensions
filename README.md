@@ -29,7 +29,10 @@ runtime dependency installation is needed. Remove any standalone installation of
   transcript but are excluded from future model context. They are not ephemeral
   or private from anyone with access to that session file.
 - Each question is independent; earlier side answers are not included.
-- Shows a spinner above the editor while the answer is pending.
+- Shows a spinner above the editor while the answer is pending, then pins the
+  answer there (up to 15 lines) so main-agent output can't scroll it away. Press
+  Esc with an empty editor while the agent is idle to dismiss it; while the agent
+  runs, Esc still interrupts it as usual. A new `/btw` replaces the pinned answer.
 - Runs one side question at a time, with a two-minute timeout. A second `/btw`
   is rejected until the first finishes; `/btw --cancel` stops the running one so
   you can ask again. It never touches the main task. Session shutdown or tree
@@ -46,7 +49,7 @@ npm test -- /absolute/path/to/node_modules/@earendil-works/pi-coding-agent
 ```
 
 The tests use Pi's native extension loader and mock model responses. They cover
-context isolation, non-blocking requests, the loading widget, cancellation, shutdown, and errors.
+context isolation, non-blocking requests, the loading widget, the pinned answer, cancellation, shutdown, and errors.
 Live provider responses and visual TUI rendering still need manual verification.
 
 ## Publishing checklist
