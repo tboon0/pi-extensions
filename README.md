@@ -28,7 +28,9 @@ runtime dependency installation is needed. Remove any standalone installation of
 - Saves answers as display-only entries in the session file once they leave the
   pinned box (Esc, a new `/btw`, tree navigation, or session shutdown), so an
   answer never shows twice. A hard crash loses an answer that is still pinned.
-  Saved answers appear in the transcript but are excluded from future model context. They are not ephemeral
+  Saved answers appear in the transcript in a muted bordered box labelled
+  "not in model context", collapsed to 6 lines until expanded (Ctrl+O by
+  default), and are excluded from future model context. They are not ephemeral
   or private from anyone with access to that session file.
 - Each question is independent; earlier side answers are not included.
 - Shows a spinner above the editor while the answer is pending, then pins the

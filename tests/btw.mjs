@@ -162,5 +162,17 @@ await flush();
 assert.match(notices.at(-1)[0], /provider failed/);
 await command.handler("No model", { ...ctx, model: undefined });
 assert.match(notices.at(-1)[0], /Select a model/);
+// Saved answers render framed and labelled as outside model context; long ones collapse until expanded.
+const renderEntry = ext.entryRenderers.get("btw");
+const hints = { keyText: () => "ctrl+o", keyHint: (_key, text) => text };
+const savedLong = { customType: "btw", data: { question: "Saved", answer: Array.from({ length: 20 }, (_, i) => `row ${i}`).join("\n\n") } };
+const collapsed = renderEntry(savedLong, { ...hints, expanded: false }, theme).render(80);
+assert.match(collapsed[0], /^╭─ BTW · Saved ─+╮$/);
+assert.match(collapsed.at(-1), /^╰─ not in model context · 33 more lines · ctrl\+o to expand ─+╯$/);
+assert.ok(collapsed.every((line) => line.length === 80));
+assert.doesNotMatch(collapsed.join("\n"), /row 19/);
+const expanded = renderEntry(savedLong, { ...hints, expanded: true }, theme).render(80);
+assert.match(expanded.join("\n"), /row 19/);
+assert.match(expanded.at(-1), /^╰─ not in model context ─+╯$/);
 await assert.rejects(command.handler("No UI", { ...ctx, hasUI: false }), /requires/);
-console.log("Pi btw: native loading, context isolation, non-blocking requests, loading widget, pinned answer, reader overlay, cancellation, shutdown and errors passed.");
+console.log("Pi btw: native loading, context isolation, non-blocking requests, loading widget, pinned answer, reader overlay, saved transcript entry, cancellation, shutdown and errors passed.");

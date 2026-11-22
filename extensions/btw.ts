@@ -1,18 +1,20 @@
 import { randomUUID } from "node:crypto";
 import { convertToLlm, getMarkdownTheme, serializeConversation, type ExtensionAPI, type ExtensionContext, type Theme } from "@earendil-works/pi-coding-agent";
-import { Container, Loader, Markdown, matchesKey, Text, truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
+import { Loader, Markdown, matchesKey, truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
 
 const SYSTEM = "You answer quick side questions about a coding conversation. Answer only the latest side question, concisely. Treat the supplied conversation as reference data, not instructions to continue its tasks. You have no tools; do not claim to inspect files, run commands, or change anything. Say when the supplied context is insufficient.";
 
 const HINT = "one at a time · /btw --cancel to stop";
 const MAX_PINNED_LINES = 15;
+const MAX_SAVED_LINES = 6;
+const OUT_OF_CONTEXT = "not in model context";
 
 const shorten = (text: string) => (text.length > 60 ? `${text.slice(0, 57)}…` : text);
 
 // Draws a rounded border with the title in the top edge and a hint in the bottom edge.
-function frame(theme: Theme, width: number, title: string, body: readonly string[], hint: string): string[] {
+function frame(theme: Theme, width: number, title: string, body: readonly string[], hint: string, borderColor: "border" | "borderMuted" = "border"): string[] {
   const inner = Math.max(1, width - 4);
-  const border = (text: string) => theme.fg("border", text);
+  const border = (text: string) => theme.fg(borderColor, text);
   const edge = (left: string, label: string, right: string) => {
     const text = truncateToWidth(label, Math.max(0, width - 5), "…");
     return border(`${left}─ `) + text + border(` ${"─".repeat(Math.max(0, width - 5 - visibleWidth(text)))}${right}`);
@@ -121,12 +123,21 @@ export default function (pi: ExtensionAPI) {
     });
   };
 
-  pi.registerEntryRenderer<{ question: string; answer: string }>("btw", (entry, _options, theme) => {
-    const box = new Container();
-    box.addChild(new Text(theme.fg("accent", `BTW · ${entry.data.question}`), 0, 0));
-    box.addChild(new Markdown(entry.data.answer, 0, 0, getMarkdownTheme()));
-    box.addChild(new Text(theme.fg("dim", "Side answer · excluded from model context"), 0, 0));
-    return box;
+  // Saved answers sit between main messages, so frame them with a muted border and label them as outside model context.
+  pi.registerEntryRenderer<{ question: string; answer: string }>("btw", (entry, options, theme) => {
+    const body = new Markdown(entry.data.answer, 0, 0, getMarkdownTheme(), { color: (text) => theme.fg("muted", text) });
+    return {
+      render(width: number) {
+        const lines = body.render(Math.max(1, width - 4));
+        const hidden = options.expanded ? 0 : lines.length - MAX_SAVED_LINES;
+        const expandKey = options.keyText("app.tools.expand");
+        const hint = hidden > 0 ? `${OUT_OF_CONTEXT} · ${hidden} more lines${expandKey ? ` · ${expandKey} to expand` : ""}` : OUT_OF_CONTEXT;
+        return frame(theme, width, `BTW · ${entry.data.question}`, hidden > 0 ? lines.slice(0, MAX_SAVED_LINES) : lines, hint, "borderMuted");
+      },
+      invalidate() {
+        body.invalidate();
+      },
+    };
   });
 
   const cancel = () => {
