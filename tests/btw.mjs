@@ -11,7 +11,7 @@ const ext = loaded.extensions[0];
 const command = ext.commands.get("btw");
 assert.ok(command);
 const entries = [], notices = [], widgets = [], requests = [];
-let escListener, idle = true, editorText = "";
+let escListener, idle = true, editorText = "", reader;
 loaded.runtime.appendEntry = (type, data) => entries.push({ type, data });
 let finish;
 const ctx = {
@@ -26,6 +26,10 @@ const ctx = {
     notify: (...args) => notices.push(args),
     setWidget: (...args) => widgets.push(args),
     getEditorText: () => editorText,
+    custom: (factory, options) => new Promise((resolve) => {
+      reader = { factory, options, closed: false };
+      reader.done = () => { reader.closed = true; resolve(); };
+    }),
     onTerminalInput: (handler) => {
       escListener = handler;
       return () => { if (escListener === handler) escListener = undefined; };
@@ -60,9 +64,14 @@ assert.equal(requests.length, 1);
 assert.match(notices.at(-1)[0], /one side question at a time/);
 finish(response);
 await flush();
-assert.deepEqual(entries, [{ type: "btw", data: { question: "Why?", answer: "Side answer" } }]);
+// While pinned, the answer is not in the transcript, so it never shows twice.
+assert.equal(entries.length, 0);
 // The answer stays pinned above the editor until Esc while idle with an empty editor.
-assert.match(widgets.at(-1)[1](undefined, theme).render(80).join("\n"), /Why\?[\s\S]*Side answer[\s\S]*Esc to dismiss/);
+const pinnedLines = widgets.at(-1)[1](undefined, theme).render(80);
+assert.match(pinnedLines[0], /^╭─ BTW · Why\? ─+╮$/);
+assert.match(pinnedLines.join("\n"), /│ Side answer +│/);
+assert.match(pinnedLines.at(-1), /^╰─ Esc to dismiss when idle ─+╯$/);
+assert.ok(pinnedLines.every((line) => line.length === 80));
 idle = false;
 assert.equal(escListener("\x1b"), undefined);
 idle = true;
@@ -73,15 +82,48 @@ assert.equal(escListener("x"), undefined);
 assert.equal(typeof widgets.at(-1)[1], "function");
 assert.deepEqual(escListener("\x1b"), { consume: true });
 assert.deepEqual(widgets.at(-1), ["btw", undefined]);
+assert.deepEqual(entries, [{ type: "btw", data: { question: "Why?", answer: "Side answer" } }]);
 assert.equal(escListener, undefined);
 // Long answers are capped; a new /btw replaces the pinned answer.
 await command.handler("Long", ctx);
 finish({ stopReason: "stop", content: [{ type: "text", text: Array.from({ length: 30 }, (_, i) => `line ${i}`).join("\n\n") }] });
 await flush();
 const pinnedLong = widgets.at(-1)[1](undefined, theme).render(80).join("\n");
-assert.match(pinnedLong, /more lines in the transcript/);
+assert.match(pinnedLong, /more lines · \/btw to read all/);
 assert.doesNotMatch(pinnedLong, /line 29/);
+// Bare /btw opens the full answer in a scrollable overlay that owns Esc.
+await command.handler("", ctx);
+assert.equal(reader.options.overlay, true);
+const view = reader.factory({ terminal: { rows: 20 }, requestRender() {} }, theme, undefined, reader.done);
+const screen = () => view.render(80).join("\n");
+assert.match(screen(), /line 0[\s\S]*1–15 of 59/);
+view.handleInput("\x1b[B");
+assert.match(screen(), /2–16 of 59/);
+view.handleInput("\x1b[F");
+assert.match(screen(), /line 29[\s\S]*45–59 of 59/);
+assert.equal(escListener("\x1b"), undefined);
+view.handleInput("\x1b");
+assert.equal(reader.closed, true);
+await flush();
+assert.equal(typeof widgets.at(-1)[1], "function");
+// Tree navigation saves the pinned answer on the branch being left.
+await ext.handlers.get("session_before_tree")[0]({}, ctx);
+assert.equal(entries.at(-1).data.question, "Long");
+assert.match(entries.at(-1).data.answer, /line 29/);
+assert.deepEqual(widgets.at(-1), ["btw", undefined]);
 entries.pop();
+// A new /btw saves the previous pinned answer, and shutdown saves one still pinned.
+await command.handler("First", ctx);
+finish(response);
+await flush();
+assert.equal(entries.length, 1);
+await command.handler("Second", ctx);
+assert.equal(entries.at(-1).data.question, "First");
+finish(response);
+await flush();
+await ext.handlers.get("session_shutdown")[0]({}, ctx);
+assert.equal(entries.at(-1).data.question, "Second");
+entries.splice(1);
 await command.handler("Cancel me", ctx);
 await command.handler("--cancel", ctx);
 assert.equal(requests.at(-1).options.signal.aborted, true);
@@ -108,4 +150,4 @@ assert.match(notices.at(-1)[0], /provider failed/);
 await command.handler("No model", { ...ctx, model: undefined });
 assert.match(notices.at(-1)[0], /Select a model/);
 await assert.rejects(command.handler("No UI", { ...ctx, hasUI: false }), /requires/);
-console.log("Pi btw: native loading, context isolation, non-blocking requests, loading widget, pinned answer, cancellation, shutdown and errors passed.");
+console.log("Pi btw: native loading, context isolation, non-blocking requests, loading widget, pinned answer, reader overlay, cancellation, shutdown and errors passed.");
