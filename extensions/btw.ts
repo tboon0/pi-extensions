@@ -139,7 +139,10 @@ export default function (pi: ExtensionAPI) {
     savePinned();
   });
   // Save on the branch being left, not the one navigated to.
-  pi.on("session_before_tree", (_event, ctx) => clearWidget(ctx));
+  pi.on("session_before_tree", (_event, ctx) => {
+    cancel();
+    clearWidget(ctx);
+  });
   pi.on("session_tree", (_event, ctx) => {
     cancel();
     clearWidget(ctx);

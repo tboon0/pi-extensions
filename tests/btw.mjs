@@ -112,6 +112,19 @@ assert.equal(entries.at(-1).data.question, "Long");
 assert.match(entries.at(-1).data.answer, /line 29/);
 assert.deepEqual(widgets.at(-1), ["btw", undefined]);
 entries.pop();
+// A response arriving during tree summarization must not be pinned or saved on the new branch.
+await command.handler("Pending before tree", ctx);
+await ext.handlers.get("session_before_tree")[0]({}, ctx);
+const widgetsBeforeLateResponse = widgets.length;
+const entriesBeforeLateResponse = entries.length;
+finish(response);
+await flush();
+assert.equal(requests.at(-1).options.signal.aborted, true);
+assert.equal(widgets.length, widgetsBeforeLateResponse);
+assert.deepEqual(widgets.at(-1), ["btw", undefined]);
+await ext.handlers.get("session_tree")[0]({}, ctx);
+assert.equal(entries.length, entriesBeforeLateResponse);
+assert.equal(escListener, undefined);
 // A new /btw saves the previous pinned answer, and shutdown saves one still pinned.
 await command.handler("First", ctx);
 finish(response);
