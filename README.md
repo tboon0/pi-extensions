@@ -29,8 +29,11 @@ runtime dependency installation is needed. Remove any standalone installation of
   transcript but are excluded from future model context. They are not ephemeral
   or private from anyone with access to that session file.
 - Each question is independent; earlier side answers are not included.
-- Allows one side request at a time, with a two-minute timeout. `--cancel` cancels
-  only that request. Session shutdown or tree navigation cancels it too.
+- Shows a spinner above the editor while the answer is pending.
+- Runs one side question at a time, with a two-minute timeout. A second `/btw`
+  is rejected until the first finishes; `/btw --cancel` stops the running one so
+  you can ask again. It never touches the main task. Session shutdown or tree
+  navigation also cancels it.
 - Supports TUI and RPC mode, not print mode. Extra provider calls are billed but
   are not included in Pi's session cost totals.
 
@@ -43,7 +46,7 @@ npm test -- /absolute/path/to/node_modules/@earendil-works/pi-coding-agent
 ```
 
 The tests use Pi's native extension loader and mock model responses. They cover
-context isolation, non-blocking requests, cancellation, shutdown, and errors.
+context isolation, non-blocking requests, the loading widget, cancellation, shutdown, and errors.
 Live provider responses and visual TUI rendering still need manual verification.
 
 ## Publishing checklist
